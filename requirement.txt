@@ -1,0 +1,19 @@
+# Core Libraries
+numpy
+matplotlib
+tqdm
+statistics
+pickle-mixin
+
+# Deep Learning
+torch>=2.0.0
+
+# Web Interface
+Flask
+Flask-Cors
+
+# Visualization
+matplotlib
+
+# Optional Utilities
+requests

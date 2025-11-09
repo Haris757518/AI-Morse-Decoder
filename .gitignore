@@ -1,0 +1,16 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Model checkpoints
+*.pth
+
+# Environment
+.env
+.vscode/
+
+# Temp or test files
+*.json
+*.log
+*.zip
+*.tmp

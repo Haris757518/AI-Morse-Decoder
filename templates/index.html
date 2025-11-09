@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Morse Decoder</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .header p { font-size: 1.1rem; opacity: 0.9; }
+        .content { padding: 40px; }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+        .tab:hover { color: #667eea; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        .results {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+        .results.show { display: block; }
+        .result-item {
+            background: white;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .result-header {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .result-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        .accuracy {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .acc-excellent { background: #4caf50; color: white; }
+        .acc-good { background: #ff9800; color: white; }
+        .acc-poor { background: #f44336; color: white; }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .comparison-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .comparison-item h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .loader.show { display: block; }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .batch-results {
+            margin-top: 20px;
+        }
+        .batch-summary {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .batch-summary h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 AI Morse Decoder</h1>
+            <p>Deep Learning vs Traditional Rule-Based Decoding</p>
+        </div>
+        
+        <div class="content">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('single')">Single Test</button>
+                <button class="tab" onclick="switchTab('batch')">Batch Evaluation</button>
+            </div>
+            
+            <!-- Single Test Tab -->
+            <div id="single" class="tab-content active">
+                <div class="input-group">
+                    <label>Test Message</label>
+                    <select id="messageSelect" onchange="updateMessage()">
+                        <option value="code red">code red</option>
+                        <option value="sos help">sos help</option>
+                        <option value="alpha bravo">alpha bravo</option>
+                        <option value="secure link">secure link</option>
+                        <option value="custom">Custom...</option>
+                    </select>
+                    <input type="text" id="customMessage" placeholder="Enter custom message" style="display:none; margin-top:10px;">
+                </div>
+                
+                <div class="input-group">
+                    <label>Noise Level</label>
+                    <select id="noiseLevel">
+                        <option value="extreme">Extreme (200%)</option>
+                        <option value="moderate">Moderate (100%)</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label>Test Mode</label>
+                    <select id="testMode">
+                        <option value="best">Best Case (Auto-Perfect Seed)</option>
+                        <option value="realistic">Realistic (Random Seed)</option>
+                    </select>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn-primary" onclick="runSingleTest()">🚀 Run Test</button>
+                    <button class="btn-secondary" onclick="clearResults()">Clear</button>
+                </div>
+                
+                <div class="loader" id="singleLoader">
+                    <div class="spinner"></div>
+                    <p style="margin-top:10px;">Processing...</p>
+                </div>
+                
+                <div class="results" id="singleResults"></div>
+            </div>
+            
+            <!-- Batch Test Tab -->
+            <div id="batch" class="tab-content">
+                <div class="input-group">
+                    <label>Test Message</label>
+                    <input type="text" id="batchMessage" value="code red" placeholder="Enter message">
+                </div>
+                
+                <div class="input-group">
+                    <label>Noise Level</label>
+                    <select id="batchNoiseLevel">
+                        <option value="extreme">Extreme (200%)</option>
+                        <option value="moderate">Moderate (100%)</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label>Number of Trials</label>
+                    <input type="number" id="trials" value="10" min="5" max="50">
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn-primary" onclick="runBatchTest()">📊 Run Batch Test</button>
+                    <button class="btn-secondary" onclick="clearResults()">Clear</button>
+                </div>
+                
+                <div class="loader" id="batchLoader">
+                    <div class="spinner"></div>
+                    <p style="margin-top:10px;">Running batch evaluation...</p>
+                </div>
+                
+                <div class="results" id="batchResults"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab).classList.add('active');
+        }
+        
+        function updateMessage() {
+            const select = document.getElementById('messageSelect');
+            const custom = document.getElementById('customMessage');
+            if (select.value === 'custom') {
+                custom.style.display = 'block';
+            } else {
+                custom.style.display = 'none';
+            }
+        }
+        
+        function getMessage() {
+            const select = document.getElementById('messageSelect');
+            if (select.value === 'custom') {
+                return document.getElementById('customMessage').value || 'test';
+            }
+            return select.value;
+        }
+        
+        function getAccuracyClass(acc) {
+            if (acc >= 90) return 'acc-excellent';
+            if (acc >= 70) return 'acc-good';
+            return 'acc-poor';
+        }
+        
+        async function runSingleTest() {
+            const message = getMessage();
+            const noiseLevel = document.getElementById('noiseLevel').value;
+            const mode = document.getElementById('testMode').value;
+            
+            document.getElementById('singleLoader').classList.add('show');
+            document.getElementById('singleResults').classList.remove('show');
+            
+            try {
+                const response = await fetch('/api/decode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, noise_level: noiseLevel, mode })
+                });
+                
+                const data = await response.json();
+                displaySingleResults(data);
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+            
+            document.getElementById('singleLoader').classList.remove('show');
+        }
+        
+        function displaySingleResults(data) {
+            const html = `
+                <div class="result-item">
+                    <div class="result-header">Input Message</div>
+                    <div class="result-value">"${data.message}"</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-header">Test Configuration</div>
+                    <div class="result-value">
+                        Noise: ${data.noise_level === 'extreme' ? 'Extreme (200%)' : 'Moderate (100%)'} | 
+                        Mode: ${data.mode === 'best' ? 'Best Case' : 'Realistic'} | 
+                        Seed: ${data.seed}
+                    </div>
+                </div>
+                
+                <div class="comparison">
+                    <div class="comparison-item">
+                        <h3>📊 Standard Decoder</h3>
+                        <div class="result-value">"${data.standard.output}"</div>
+                        <div class="accuracy ${getAccuracyClass(data.standard.accuracy)}">
+                            ${data.standard.accuracy}%
+                        </div>
+                    </div>
+                    
+                    <div class="comparison-item">
+                        <h3>🤖 AI Decoder</h3>
+                        <div class="result-value">"${data.ai.output}"</div>
+                        <div class="accuracy ${getAccuracyClass(data.ai.accuracy)}">
+                            ${data.ai.accuracy}%
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-item" style="border-left-color: ${data.improvement > 0 ? '#4caf50' : '#f44336'}">
+                    <div class="result-header">Performance Improvement</div>
+                    <div class="result-value" style="color: ${data.improvement > 0 ? '#4caf50' : '#f44336'}">
+                        ${data.improvement > 0 ? '+' : ''}${data.improvement}%
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('singleResults').innerHTML = html;
+            document.getElementById('singleResults').classList.add('show');
+        }
+        
+        async function runBatchTest() {
+            const message = document.getElementById('batchMessage').value;
+            const noiseLevel = document.getElementById('batchNoiseLevel').value;
+            const trials = parseInt(document.getElementById('trials').value);
+            
+            document.getElementById('batchLoader').classList.add('show');
+            document.getElementById('batchResults').classList.remove('show');
+            
+            try {
+                const response = await fetch('/api/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, noise_level: noiseLevel, trials })
+                });
+                
+                const data = await response.json();
+                displayBatchResults(data);
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+            
+            document.getElementById('batchLoader').classList.remove('show');
+        }
+        
+        function displayBatchResults(data) {
+            const html = `
+                <div class="batch-summary">
+                    <h3>📈 Summary Statistics</h3>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <div class="stat-value">${data.summary.avg_standard}%</div>
+                            <div class="stat-label">Avg Standard</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${data.summary.avg_ai}%</div>
+                            <div class="stat-label">Avg AI</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">+${data.summary.avg_improvement}%</div>
+                            <div class="stat-label">Improvement</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${data.summary.ai_wins}/${data.trials}</div>
+                            <div class="stat-label">AI Wins</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-header">Test Details</div>
+                    <div class="result-value">
+                        Message: "${data.message}" | 
+                        Noise: ${data.noise_level === 'extreme' ? 'Extreme (200%)' : 'Moderate (100%)'} | 
+                        Trials: ${data.trials}
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('batchResults').innerHTML = html;
+            document.getElementById('batchResults').classList.add('show');
+        }
+        
+        function clearResults() {
+            document.getElementById('singleResults').classList.remove('show');
+            document.getElementById('batchResults').classList.remove('show');
+        }
+    </script>
+</body>
+</html>
+"""
+
+# Save the HTML to templates/index.html
+import os
+os.makedirs('templates', exist_ok=True)
+with open('templates/index.html', 'w') as f:
+    f.write(__doc__.split('"""')[1])
+
+print("✅ Files created:")
+print("   - app.py (Flask backend)")
+print("   - templates/index.html (Web interface)")
+print("\n🚀")
